@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive California & Federal Tax Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* slate-900 */
+            color: #d1d5db; /* gray-300 */
+        }
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        .input-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-weight: 500;
+            color: #9ca3af; /* gray-400 */
+        }
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #374151; /* gray-700 */
+            border-radius: 0.375rem;
+            background-color: #1f2937; /* gray-800 */
+            color: #f3f4f6; /* gray-200 */
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #4f46e5; /* indigo-600 */
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+        }
+        .card {
+            background-color: #1f2937; /* gray-800 */
+            border-radius: 0.75rem;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #374151; /* gray-700 */
+        }
+        .card-header {
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #374151; /* gray-700 */
+        }
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #f9fafb; /* gray-50 */
+        }
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #374151; /* gray-700 */
+        }
+        .result-item:last-child {
+            border-bottom: none;
+        }
+        .result-label {
+            color: #9ca3af; /* gray-400 */
+        }
+        .result-value {
+            font-weight: 600;
+            color: #f9fafb; /* gray-50 */
+        }
+        .bracket-table {
+            width: 100%; text-align: left; margin-top: 1rem;
+        }
+        .bracket-table th, .bracket-table td {
+            padding: 0.5rem; border-bottom: 1px solid #374151; /* gray-700 */
+        }
+        .bracket-table th { font-weight: 600; color: #9ca3af; }
+        
+        h1 {
+            color: #f9fafb; /* gray-50 */
+        }
+        p, footer {
+            color: #6b7280; /* gray-500 */
+        }
+        .calc-button {
+             background-color: #4f46e5; /* indigo-600 */
+             color: #ffffff;
+        }
+        .calc-button:hover {
+            background-color: #4338ca; /* indigo-700 */
+        }
+        .link-button {
+            color: #818cf8; /* indigo-400 */
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 lg:p-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold">Comprehensive Tax Calculator</h1>
+            <p class="mt-2">Project your CA & Federal tax liability with enhanced detail.</p>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <!-- Input Column -->
+            <div class="xl:col-span-2">
+                <div class="card">
+                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4">
+                        <!-- Column 1: Filing & Income -->
+                        <div class="space-y-4">
+                             <h2 class="card-title">Filing Information</h2>
+                             <div class="grid grid-cols-2 gap-4">
+                                <div class="input-group">
+                                    <label for="filingStatus" class="input-label">Filing Status</label>
+                                    <select id="filingStatus" class="input-field">
+                                        <option value="mfj">Married Filing Jointly</option>
+                                        <option value="single">Single</option>
+                                        <option value="mfs">Married Filing Separately</option>
+                                        <option value="hoh">Head of Household</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="taxYear" class="input-label">Tax Year</label>
+                                    <select id="taxYear" class="input-field">
+                                        <option value="2025">2025</option>
+                                        <option value="2024" selected>2024</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <h2 class="card-title mt-6">Wages & Investments</h2>
+                             <div class="input-group">
+                                <label for="income1" class="input-label">Wages (Person 1)</label>
+                                <input type="number" id="income1" class="input-field" placeholder="80000">
+                            </div>
+                             <div class="input-group">
+                                <label for="income2" class="input-label">Wages (Person 2)</label>
+                                <input type="number" id="income2" class="input-field" placeholder="70000">
+                            </div>
+                            <div class="input-group">
+                                <label for="shortTermGains" class="input-label">Short-Term Gains</label>
+                                <input type="number" id="shortTermGains" class="input-field" placeholder="5000">
+                            </div>
+                            <div class="input-group">
+                                <label for="longTermGains" class="input-label">Long-Term Gains</label>
+                                <input type="number" id="longTermGains" class="input-field" placeholder="10000">
+                            </div>
+                            <div class="input-group">
+                                <label for="qualifiedDividends" class="input-label">Qualified Dividends</label>
+                                <input type="number" id="qualifiedDividends" class="input-field" placeholder="2000">
+                            </div>
+                        </div>
+                        <!-- Column 2: Pre-Tax Deductions -->
+                        <div class="space-y-4">
+                            <h2 class="card-title">Pre-Tax Deductions</h2>
+                            <div class="input-group">
+                                <label for="contrib401k_1" class="input-label">401k (Person 1)</label>
+                                <input type="number" id="contrib401k_1" class="input-field" placeholder="12000">
+                            </div>
+                             <div class="input-group">
+                                <label for="contrib401k_2" class="input-label">401k (Person 2)</label>
+                                <input type="number" id="contrib401k_2" class="input-field" placeholder="11000">
+                            </div>
+                            <div class="input-group">
+                                <label for="ira1" class="input-label">Trad. IRA (Person 1)</label>
+                                <input type="number" id="ira1" class="input-field" placeholder="7000">
+                            </div>
+                            <div class="input-group">
+                                <label for="ira2" class="input-label">Trad. IRA (Person 2)</label>
+                                <input type="number" id="ira2" class="input-field" placeholder="7000">
+                            </div>
+                            <div class="input-group">
+                                <label for="hsa" class="input-label">HSA Contributions</label>
+                                <input type="number" id="hsa" class="input-field" placeholder="4150">
+                            </div>
+                             <div class="input-group">
+                                <label for="studentLoanInterest" class="input-label">Student Loan Interest</label>
+                                <input type="number" id="studentLoanInterest" class="input-field" placeholder="2500">
+                            </div>
+                        </div>
+                         <!-- Column 3: Itemized & Credits -->
+                        <div class="space-y-4">
+                             <h2 class="card-title">Itemized Deductions</h2>
+                             <div class="input-group">
+                                <label for="mortgageInterest" class="input-label">Home Mortgage Interest</label>
+                                <input type="number" id="mortgageInterest" class="input-field" placeholder="10000">
+                            </div>
+                             <div class="input-group">
+                                <label for="saltDeduction" class="input-label">State & Local Taxes (SALT)</label>
+                                <input type="number" id="saltDeduction" class="input-field" placeholder="15000">
+                            </div>
+                            <button id="useStandardDeduction" class="text-sm link-button hover:underline">Clear Itemized to use Standard Deduction</button>
+                            <h2 class="card-title mt-6">Tax Credits</h2>
+                            <div class="input-group">
+                                <label for="numChildren" class="input-label"># of Qualifying Children</label>
+                                <input type="number" id="numChildren" class="input-field" placeholder="0">
+                            </div>
+                        </div>
+                     </div>
+                     <div class="text-center mt-8 pt-8 border-t border-gray-700">
+                        <button id="calculateBtn" class="calc-button font-bold py-3 px-12 rounded-lg transition duration-300 text-lg">Calculate</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Column -->
+            <div class="space-y-8">
+                 <div id="summary" class="card" style="display: none;">
+                     <div class="card-header"><h2 class="card-title">Summary</h2></div>
+                     <div id="summaryResults"></div>
+                 </div>
+                <div id="caCard" class="card" style="display: none;">
+                    <div class="card-header"><h2 class="card-title">California Estimated Tax</h2></div>
+                    <div id="caResults"></div>
+                </div>
+                <div id="fedCard" class="card" style="display: none;">
+                    <div class="card-header"><h2 class="card-title">Federal Estimated Tax</h2></div>
+                    <div id="federalResults"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tax Bracket Information Section -->
+        <div class="mt-12 pt-6">
+             <div id="bracketInfo" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <div class="card">
+                     <div id="caBracketTableContainer"></div>
+                 </div>
+                 <div class="card">
+                     <div id="fedBracketTableContainer"></div>
+                 </div>
+                 <div class="card">
+                     <div id="fedLtgBracketTableContainer"></div>
+                 </div>
+             </div>
+        </div>
+         <footer class="text-center mt-12 mb-4 text-sm">
+            <p>Built by Surendrap</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const calculateBtn = document.getElementById('calculateBtn');
+            const useStandardDeductionBtn = document.getElementById('useStandardDeduction');
+            
+            useStandardDeductionBtn.addEventListener('click', () => {
+                document.getElementById('mortgageInterest').value = '';
+                document.getElementById('saltDeduction').value = '';
+                clearResults();
+            });
+            calculateBtn.addEventListener('click', calculateTaxes);
+            
+            const allInputs = ['filingStatus', 'taxYear', 'income1', 'income2', 'contrib401k_1', 'contrib401k_2', 'ira1', 'ira2', 'hsa', 'studentLoanInterest', 'mortgageInterest', 'saltDeduction', 'shortTermGains', 'longTermGains', 'numChildren', 'qualifiedDividends'];
+            allInputs.forEach(id => { document.getElementById(id)?.addEventListener('input', clearResults); });
+            
+            document.getElementById('filingStatus').addEventListener('change', populateAllBracketTables);
+            document.getElementById('taxYear').addEventListener('change', populateAllBracketTables);
+
+            populateAllBracketTables();
+        });
+
+        function clearResults() {
+             document.getElementById('summary').style.display = 'none';
+             document.getElementById('caCard').style.display = 'none';
+             document.getElementById('fedCard').style.display = 'none';
+        }
+
+        function getInputs() {
+            const income1 = parseFloat(document.getElementById('income1').value) || 0;
+            const income2 = parseFloat(document.getElementById('income2').value) || 0;
+            const contrib401k_1 = parseFloat(document.getElementById('contrib401k_1').value) || 0;
+            const contrib401k_2 = parseFloat(document.getElementById('contrib401k_2').value) || 0;
+            const ira1 = parseFloat(document.getElementById('ira1').value) || 0;
+            const ira2 = parseFloat(document.getElementById('ira2').value) || 0;
+            const mortgageInterest = parseFloat(document.getElementById('mortgageInterest').value) || 0;
+            const saltDeduction = parseFloat(document.getElementById('saltDeduction').value) || 0;
+
+            return {
+                year: document.getElementById('taxYear').value,
+                filingStatus: document.getElementById('filingStatus').value,
+                income: income1 + income2,
+                qualifiedDividends: parseFloat(document.getElementById('qualifiedDividends').value) || 0,
+                contrib401k: contrib401k_1 + contrib401k_2,
+                contribIra: ira1 + ira2,
+                hsa: parseFloat(document.getElementById('hsa').value) || 0,
+                studentLoanInterest: parseFloat(document.getElementById('studentLoanInterest').value) || 0,
+                itemizedDeductions: mortgageInterest + saltDeduction,
+                saltDeduction: saltDeduction,
+                mortgageInterest: mortgageInterest,
+                shortTermGains: parseFloat(document.getElementById('shortTermGains').value) || 0,
+                longTermGains: parseFloat(document.getElementById('longTermGains').value) || 0,
+                numChildren: parseInt(document.getElementById('numChildren').value) || 0
+            };
+        }
+
+        function calculateTaxes() {
+            const inputs = getInputs();
+            const preTaxDeductions = inputs.contrib401k + inputs.contribIra + inputs.hsa + inputs.studentLoanInterest;
+            const agi = Math.max(0, inputs.income - preTaxDeductions);
+            
+            const caTax = calculateCaliforniaTax({ ...inputs, agi });
+            displayResults('caResults', caTax.display, 'caCard');
+
+            const federalTax = calculateFederalTax({ ...inputs, agi });
+            displayResults('federalResults', federalTax.display, 'fedCard');
+
+            const totalTax = caTax.totalTax + federalTax.totalTax;
+            const totalGrossIncome = inputs.income + inputs.qualifiedDividends + inputs.shortTermGains + inputs.longTermGains;
+            const effectiveTaxRate = totalGrossIncome > 0 ? (totalTax / totalGrossIncome) * 100 : 0;
+            
+            const summaryResults = {
+                "Gross Wages": formatCurrency(inputs.income),
+                "Total Gross Income": formatCurrency(totalGrossIncome),
+                "Total Estimated Tax": formatCurrency(totalTax),
+                "Overall Effective Tax Rate": `${effectiveTaxRate.toFixed(2)}%`
+            };
+            displayResults('summaryResults', summaryResults, 'summary');
+        }
+
+        function calculateCaliforniaTax({ year, agi, shortTermGains, longTermGains, qualifiedDividends, itemizedDeductions, filingStatus }) {
+            const totalCaIncome = agi + shortTermGains + longTermGains + qualifiedDividends;
+            const standardDeduction = getCaStandardDeduction(year, filingStatus);
+            const finalDeductions = itemizedDeductions > standardDeduction ? itemizedDeductions : standardDeduction;
+            const taxableIncome = Math.max(0, totalCaIncome - finalDeductions);
+            
+            const brackets = getCaBrackets(year, filingStatus);
+            let bracketTax = calculateBracketTax(taxableIncome, brackets);
+            let marginalRate = getMarginalRate(taxableIncome, brackets);
+
+            let mhst = 0;
+            if (taxableIncome > 1000000) {
+                mhst = (taxableIncome - 1000000) * 0.01;
+                marginalRate += 1;
+            }
+
+            const totalTax = bracketTax + mhst;
+            const effectiveRate = totalCaIncome > 0 ? (totalTax / totalCaIncome) * 100 : 0;
+            
+            return {
+                totalTax: totalTax,
+                display: {
+                    "Adjusted Gross Income (AGI)": formatCurrency(agi),
+                    "Total CA Income": formatCurrency(totalCaIncome),
+                    "Deductions": formatCurrency(finalDeductions),
+                    "Taxable Income": formatCurrency(taxableIncome),
+                    "Mental Health Surtax": formatCurrency(mhst),
+                    "<b>Marginal Tax Rate</b>": `<b>${marginalRate.toFixed(2)}%</b>`,
+                    "Effective Tax Rate": `${effectiveRate.toFixed(2)}%`,
+                    "<b>Estimated Tax</b>": `<b>${formatCurrency(totalTax)}</b>`,
+                }
+            };
+        }
+
+        function calculateFederalTax({ year, agi, shortTermGains, longTermGains, qualifiedDividends, mortgageInterest, saltDeduction, filingStatus, numChildren }) {
+            const standardDeduction = getFedStandardDeduction(year, filingStatus);
+            const cappedSalt = Math.min(10000, saltDeduction);
+            const federalItemized = mortgageInterest + cappedSalt;
+            const finalDeductions = federalItemized > standardDeduction ? federalItemized : standardDeduction;
+            
+            const ordinaryIncome = agi + shortTermGains;
+            const preferentialIncome = longTermGains + qualifiedDividends;
+            const ordinaryTaxable = Math.max(0, ordinaryIncome - finalDeductions);
+            
+            const ordinaryBrackets = getFedOrdinaryBrackets(year, filingStatus);
+            const ordinaryTax = calculateBracketTax(ordinaryTaxable, ordinaryBrackets);
+
+            const longTermBrackets = getFedLongTermBrackets(year, filingStatus);
+            const longTermTax = calculateCapitalGainsTax(ordinaryTaxable, preferentialIncome, longTermBrackets);
+            
+            const taxBeforeCredits = ordinaryTax + longTermTax;
+            const childTaxCreditAmount = year === '2024' ? 2000 : 2000;
+            const childTaxCredit = numChildren * childTaxCreditAmount;
+            
+            const totalTax = Math.max(0, taxBeforeCredits - childTaxCredit);
+            
+            const totalFedIncome = ordinaryIncome + preferentialIncome;
+            const effectiveRate = totalFedIncome > 0 ? (totalTax / totalFedIncome) * 100 : 0;
+            const marginalRate = getMarginalRate(ordinaryTaxable, ordinaryBrackets);
+
+            return {
+                totalTax: totalTax,
+                display: {
+                    "Adjusted Gross Income (AGI)": formatCurrency(agi),
+                    "Deductions": formatCurrency(finalDeductions),
+                    "Taxable Ordinary Income": formatCurrency(ordinaryTaxable),
+                    "Tax on Ordinary/ST": formatCurrency(ordinaryTax),
+                    "Tax on LT/Dividends": formatCurrency(longTermTax),
+                    "Child Tax Credit": `-${formatCurrency(childTaxCredit)}`,
+                    "<b>Marginal Tax Rate</b>": `<b>${marginalRate.toFixed(2)}%</b>`,
+                    "Effective Tax Rate": `${effectiveRate.toFixed(2)}%`,
+                    "<b>Total Estimated Tax</b>": `<b>${formatCurrency(totalTax)}</b>`,
+                }
+            };
+        }
+
+        function getMarginalRate(income, brackets) {
+            let rate = 0;
+            for (const bracket of brackets) {
+                if (income > bracket.from) {
+                    rate = bracket.rate * 100;
+                }
+            }
+            return rate;
+        }
+
+        function calculateBracketTax(income, brackets) {
+            let tax = 0;
+            for (const bracket of brackets) {
+                if (income > bracket.from) {
+                    const taxableAtThisRate = Math.min(income, bracket.to || Infinity) - bracket.from;
+                    tax = bracket.base + taxableAtThisRate * bracket.rate;
+                }
+            }
+            return tax;
+        }
+
+        function calculateCapitalGainsTax(ordinaryIncome, preferentialIncome, brackets) {
+             if (preferentialIncome <= 0) return 0;
+             let tax = 0;
+             let remainingGains = preferentialIncome;
+             let incomeCursor = ordinaryIncome;
+             for (const bracket of brackets) {
+                if (remainingGains <= 0) break;
+                const bracketTop = bracket.to ?? Infinity;
+                if (incomeCursor < bracketTop) {
+                    const roomInBracket = bracketTop - incomeCursor;
+                    const gainsToTaxInBracket = Math.min(remainingGains, roomInBracket);
+                    tax += gainsToTaxInBracket * bracket.rate;
+                    remainingGains -= gainsToTaxInBracket;
+                    incomeCursor += gainsToTaxInBracket;
+                }
+             }
+             return tax;
+        }
+
+        function displayResults(elementId, results, cardId) {
+            const container = document.getElementById(elementId);
+            const card = document.getElementById(cardId);
+            container.innerHTML = Object.entries(results).map(([key, value]) => `<div class="result-item"><span class="result-label">${key}</span><span class="result-value">${value}</span></div>`).join('');
+            card.style.display = 'block';
+        }
+
+        function formatCurrency(amount) {
+            return amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+
+        function populateAllBracketTables() {
+            const { year, filingStatus } = getInputs();
+            document.getElementById('caBracketTableContainer').innerHTML = generateBracketTableHTML(`California ${year} Brackets`, getCaBrackets(year, filingStatus));
+            document.getElementById('fedBracketTableContainer').innerHTML = generateBracketTableHTML(`Federal ${year} Ordinary Brackets`, getFedOrdinaryBrackets(year, filingStatus));
+            document.getElementById('fedLtgBracketTableContainer').innerHTML = generateLtgBracketTableHTML(`Federal ${year} Long-Term Capital Gains`, getFedLongTermBrackets(year, filingStatus));
+        }
+
+        function generateBracketTableHTML(title, brackets) {
+            let html = `<h3 class="card-title text-center mb-4">${title}</h3><table class="bracket-table"><thead><tr><th>Rate</th><th>Taxable Income Over</th></tr></thead><tbody>`;
+            html += brackets.map(b => `<tr><td>${(b.rate * 100).toFixed(2)}%</td><td>${formatCurrency(b.from)}</td></tr>`).join('');
+            return html + `</tbody></table>`;
+        }
+        
+        function generateLtgBracketTableHTML(title, brackets) {
+            let html = `<h3 class="card-title text-center mb-4">${title}</h3><table class="bracket-table"><thead><tr><th>Rate</th><th>Taxable Income Range</th></tr></thead><tbody>`;
+            let lastTo = 0;
+            html += brackets.map(b => {
+                const fromStr = formatCurrency(lastTo === 0 ? 0 : lastTo + 1);
+                const toStr = b.to ? ` - ${formatCurrency(b.to)}` : ' and over';
+                const rangeStr = (lastTo === 0) ? `Up to ${formatCurrency(b.to)}` : `${fromStr}${toStr}`;
+                lastTo = b.to;
+                return `<tr><td>${(b.rate * 100)}%</td><td>${rangeStr}</td></tr>`
+            }).join('');
+            return html + `</tbody></table>`;
+        }
+
+        // --- Data Functions ---
+        function getCaStandardDeduction(year, status) {
+            switch (status) { case 'single': case 'mfs': return 5540; case 'mfj': case 'hoh': default: return 11080; }
+        }
+
+        function getFedStandardDeduction(year, status) {
+            const data = { '2024': { single: 14600, mfs: 14600, mfj: 29200, hoh: 21900 }, '2025': { single: 15000, mfs: 15000, mfj: 30000, hoh: 22500 } };
+            return data[year][status] || data[year]['mfj'];
+        }
+
+        function getCaBrackets(year, status) {
+            const brackets = {
+                mfj: [ { from: 0, to: 21512, rate: 0.01, base: 0 }, { from: 21512, to: 50998, rate: 0.02, base: 215.12 }, { from: 50998, to: 80490, rate: 0.04, base: 804.84 }, { from: 80490, to: 111732, rate: 0.06, base: 1984.52 }, { from: 111732, to: 141212, rate: 0.08, base: 3859.04 }, { from: 141212, to: 721318, rate: 0.093, base: 6217.44 }, { from: 721318, to: 865574, rate: 0.103, base: 60167.30 }, { from: 865574, to: 1442628, rate: 0.113, base: 75025.67 }, { from: 1442628, to: null, rate: 0.123, base: 140232.77 } ],
+                single: [ { from: 0, to: 10756, rate: 0.01, base: 0 }, { from: 10756, to: 25499, rate: 0.02, base: 107.56 }, { from: 25499, to: 40245, rate: 0.04, base: 402.42 }, { from: 40245, to: 55866, rate: 0.06, base: 992.26 }, { from: 55866, to: 70606, rate: 0.08, base: 1929.52 }, { from: 70606, to: 360659, rate: 0.093, base: 3108.72 }, { from: 360659, to: 432787, rate: 0.103, base: 30083.65 }, { from: 432787, to: 721314, rate: 0.113, base: 37512.83 }, { from: 721314, to: null, rate: 0.123, base: 70116.38 } ],
+                hoh: [ { from: 0, to: 21527, rate: 0.01, base: 0 }, { from: 21527, to: 51000, rate: 0.02, base: 215.27 }, { from: 51000, to: 65744, rate: 0.04, base: 804.73 }, { from: 65744, to: 81364, rate: 0.06, base: 1394.49 }, { from: 81364, to: 96107, rate: 0.08, base: 2331.69 }, { from: 96107, to: 490493, rate: 0.093, base: 3511.13 }, { from: 490493, to: 588593, rate: 0.103, base: 40189.03 }, { from: 588593, to: 980987, rate: 0.113, base: 50293.33 }, { from: 980987, to: null, rate: 0.123, base: 94633.85 } ]
+            };
+            brackets.mfs = brackets.single;
+            return brackets[status] || brackets['mfj'];
+        }
+
+        function getFedOrdinaryBrackets(year, status) {
+            const allBrackets = {
+                '2024': {
+                    mfj: [{ from: 0, to: 23200, rate: 0.10, base: 0 }, { from: 23200, to: 94300, rate: 0.12, base: 2320 }, { from: 94300, to: 201050, rate: 0.22, base: 10852 }, { from: 201050, to: 383900, rate: 0.24, base: 34337 }, { from: 383900, to: 487450, rate: 0.32, base: 78221 }, { from: 487450, to: 731200, rate: 0.35, base: 111357 }, { from: 731200, to: null, rate: 0.37, base: 196669.50 }],
+                    single: [{ from: 0, to: 11600, rate: 0.10, base: 0 }, { from: 11600, to: 47150, rate: 0.12, base: 1160 }, { from: 47150, to: 100525, rate: 0.22, base: 5426 }, { from: 100525, to: 191950, rate: 0.24, base: 17168.5 }, { from: 191950, to: 243725, rate: 0.32, base: 39110.5 }, { from: 243725, to: 609350, rate: 0.35, base: 55678.5 }, { from: 609350, to: null, rate: 0.37, base: 183647.25 }],
+                    hoh: [{ from: 0, to: 16550, rate: 0.10, base: 0 }, { from: 16550, to: 63100, rate: 0.12, base: 1655 }, { from: 63100, to: 100500, rate: 0.22, base: 7241 }, { from: 100500, to: 191950, rate: 0.24, base: 15469 }, { from: 191950, to: 243700, rate: 0.32, base: 37417 }, { from: 243700, to: 609350, rate: 0.35, base: 53991 }, { from: 609350, to: null, rate: 0.37, base: 181968.5 }]
+                },
+                '2025': {
+                    mfj: [{ from: 0, to: 23850, rate: 0.10, base: 0 }, { from: 23850, to: 96950, rate: 0.12, base: 2385 }, { from: 96950, to: 206700, rate: 0.22, base: 11157 }, { from: 206700, to: 394600, rate: 0.24, base: 35302 }, { from: 394600, to: 501050, rate: 0.32, base: 80398 }, { from: 501050, to: 751600, rate: 0.35, base: 114462 }, { from: 751600, to: null, rate: 0.37, base: 202154.50 }],
+                    single: [{ from: 0, to: 11925, rate: 0.10, base: 0 }, { from: 11925, to: 48475, rate: 0.12, base: 1192.5 }, { from: 48475, to: 103350, rate: 0.22, base: 5578.5 }, { from: 103350, to: 197300, rate: 0.24, base: 17651 }, { from: 197300, to: 250525, rate: 0.32, base: 40199 }, { from: 250525, to: 626350, rate: 0.35, base: 57231 }, { from: 626350, to: null, rate: 0.37, base: 188769.75 }],
+                    hoh: [{ from: 0, to: 17050, rate: 0.10, base: 0 }, { from: 17050, to: 69300, rate: 0.12, base: 1705 }, { from: 17050, to: 103350, rate: 0.22, base: 7975 }, { from: 103350, to: 197300, rate: 0.24, base: 15866 }, { from: 197300, to: 250500, rate: 0.32, base: 38414 }, { from: 250500, to: 626300, rate: 0.35, base: 55478 }, { from: 626300, to: null, rate: 0.37, base: 187008 }]
+                }
+            };
+            allBrackets['2024'].mfs = allBrackets['2024'].single;
+            allBrackets['2025'].mfs = allBrackets['2025'].single;
+            return allBrackets[year][status] || allBrackets[year]['mfj'];
+        }
+
+        function getFedLongTermBrackets(year, status) {
+            const allBrackets = {
+                '2024': {
+                    mfj: [{ to: 94050, rate: 0.00 }, { to: 583750, rate: 0.15 }, { to: null, rate: 0.20 }],
+                    single: [{ to: 47025, rate: 0.00 }, { to: 518900, rate: 0.15 }, { to: null, rate: 0.20 }],
+                    mfs: [{ to: 47025, rate: 0.00 }, { to: 291850, rate: 0.15 }, { to: null, rate: 0.20 }],
+                    hoh: [{ to: 63000, rate: 0.00 }, { to: 551350, rate: 0.15 }, { to: null, rate: 0.20 }]
+                },
+                '2025': {
+                    mfj: [{ to: 96950, rate: 0.00 }, { to: 601350, rate: 0.15 }, { to: null, rate: 0.20 }],
+                    single: [{ to: 48475, rate: 0.00 }, { to: 534550, rate: 0.15 }, { to: null, rate: 0.20 }],
+                    mfs: [{ to: 48475, rate: 0.00 }, { to: 300675, rate: 0.15 }, { to: null, rate: 0.20 }],
+                    hoh: [{ to: 64900, rate: 0.00 }, { to: 567950, rate: 0.15 }, { to: null, rate: 0.20 }]
+                }
+            };
+            return allBrackets[year][status] || allBrackets[year]['mfj'];
+        }
+    </script>
+</body>
+</html>
