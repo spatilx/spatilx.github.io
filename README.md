@@ -1,3 +1,3 @@
-(Tools) (./tools)
+(Tools)(/tools)
 
 tinkering in tech.
