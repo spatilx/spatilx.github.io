@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Options Strategy Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #06b6d4; border-radius: 50%; cursor: pointer; margin-top: -6px; }
+        .slider::-moz-range-thumb { width: 20px; height: 20px; background: #06b6d4; border-radius: 50%; cursor: pointer; }
+        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        .plot-wrapper { height: 350px; min-height: 300px; }
+        .tab-button.active { background-color: #0891b2; color: #ffffff; border-color: #0891b2; }
+        .tab-button { transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <div class="flex flex-col lg:flex-row" style="height: calc(100vh - 30px);">
+        <!-- CONTROLS PANEL -->
+        <div class="w-full lg:w-1/4 bg-gray-800 p-6 overflow-y-auto shadow-2xl">
+            <h1 class="text-2xl font-bold text-cyan-400 mb-4">Options Visualizer</h1>
+
+            <!-- Tab Navigation -->
+            <div class="mb-4 border-b border-gray-700">
+                <nav class="flex -mb-px" aria-label="Tabs">
+                    <button class="tab-button active w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-gray-400 hover:text-gray-200" data-tab="analysis">Analysis</button>
+                    <button class="tab-button w-1/2 py-2 px-1 text-center border-b-2 font-medium text-sm text-gray-400 hover:text-gray-200" data-tab="guide">Guide</button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tabContent">
+                <!-- Analysis Tab -->
+                <div id="analysis" class="tab-panel space-y-6">
+                    <!-- Setup -->
+                    <h2 class="text-lg font-semibold text-gray-200 -mb-2">Setup</h2>
+                    <div>
+                        <label for="stockPriceInput" class="block mb-2 font-medium text-gray-300">Stock Price (S)</label>
+                        <input id="stockPriceInput" type="number" value="100" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600 font-mono">
+                    </div>
+                     <div>
+                        <label for="strikePriceInput" class="block mb-2 font-medium text-gray-300">Strike Price (K)</label>
+                        <input id="strikePriceInput" type="number" value="100" class="w-full bg-gray-700 text-white rounded-lg p-2 border border-gray-600 font-mono">
+                    </div>
+                    <div>
+                        <label for="timeToMaturity" class="flex justify-between font-medium text-gray-300">Time to Maturity <span id="timeToMaturityValue" class="text-cyan-400 font-mono">365d</span></label>
+                        <input id="timeToMaturity" type="range" min="1" max="1825" value="365" step="1" class="w-full h-2 bg-gray-700 slider">
+                    </div>
+                     <div>
+                        <label for="riskFreeRate" class="flex justify-between font-medium text-gray-300">Risk-Free Rate <span id="riskFreeRateValue" class="text-cyan-400 font-mono">5.0%</span></label>
+                        <input id="riskFreeRate" type="range" min="0" max="0.1" value="0.05" step="0.001" class="w-full h-2 bg-gray-700 slider">
+                    </div>
+                    <div>
+                        <label for="volatility" class="flex justify-between font-medium text-gray-300">Model Volatility (%) <span id="volatilityValue" class="text-cyan-400 font-mono">20%</span></label>
+                        <input id="volatility" type="range" min="1" max="100" value="20" step="0.5" class="w-full h-2 bg-gray-700 slider">
+                    </div>
+                    
+                    <!-- Value Breakdown -->
+                     <div class="pt-4 border-t border-gray-700">
+                         <h2 class="text-lg font-semibold text-gray-200 mb-2">Theoretical Value Breakdown</h2>
+                         <div class="bg-gray-900 p-4 rounded-lg mb-3">
+                             <span class="font-medium text-green-400 mb-2 block">Call: <span id="callPrice" class="font-mono text-lg">$0.00</span></span>
+                             <div class="flex justify-between items-center text-sm mb-2"><span>Intrinsic:</span><span id="callIntrinsicValue" class="font-mono">$0.00</span></div>
+                             <div class="flex justify-between items-center text-sm"><span>Extrinsic:</span><span id="callExtrinsicValue" class="font-mono">$0.00</span></div>
+                         </div>
+                         <div class="bg-gray-900 p-4 rounded-lg">
+                             <span class="font-medium text-red-400 mb-2 block">Put: <span id="putPrice" class="font-mono text-lg">$0.00</span></span>
+                             <div class="flex justify-between items-center text-sm mb-2"><span>Intrinsic:</span><span id="putIntrinsicValue" class="font-mono">$0.00</span></div>
+                             <div class="flex justify-between items-center text-sm"><span>Extrinsic:</span><span id="putExtrinsicValue" class="font-mono">$0.00</span></div>
+                         </div>
+                    </div>
+                    
+                    <!-- Option Greeks -->
+                    <div class="pt-4 border-t border-gray-700">
+                        <h2 class="text-lg font-semibold text-gray-200 mb-2">Option Greeks</h2>
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div class="bg-gray-900 p-2 rounded-lg"><div class="text-sm text-gray-400" title="Rate of change per $1 move in stock">Delta</div><div class="font-mono text-green-400 text-sm" id="callDelta">0.00</div><div class="font-mono text-red-400 text-sm" id="putDelta">0.00</div></div>
+                            <div class="bg-gray-900 p-2 rounded-lg"><div class="text-sm text-gray-400" title="Rate of change of Delta">Gamma</div><div class="font-mono text-cyan-400 text-sm" id="gamma">0.00</div></div>
+                            <div class="bg-gray-900 p-2 rounded-lg"><div class="text-sm text-gray-400" title="Change per 1% move in Volatility">Vega</div><div class="font-mono text-cyan-400 text-sm" id="vega">0.00</div></div>
+                            <div class="bg-gray-900 p-2 rounded-lg col-span-2"><div class="text-sm text-gray-400" title="Value decay per day">Theta</div><div class="font-mono text-green-400 text-sm" id="callTheta">-0.00</div><div class="font-mono text-red-400 text-sm" id="putTheta">-0.00</div></div>
+                            <div class="bg-gray-900 p-2 rounded-lg"><div class="text-sm text-gray-400" title="Change per 1% move in rates">Rho</div><div class="font-mono text-green-400 text-sm" id="callRho">0.00</div><div class="font-mono text-red-400 text-sm" id="putRho">0.00</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Fair Value Assessment -->
+                    <div class="pt-4 border-t border-gray-700">
+                         <h2 class="text-lg font-semibold text-gray-200 mb-2">Fair Value Assessment</h2>
+                         <div class="grid grid-cols-2 gap-4">
+                            <div>
+                               <label for="marketPriceInput" class="block mb-2 text-sm font-medium">Market Price</label>
+                               <input id="marketPriceInput" type="number" placeholder="e.g. 5.25" class="w-full bg-gray-700 p-2 rounded-lg border border-gray-600 font-mono">
+                            </div>
+                            <div>
+                               <label for="yourVolatilityForecast" class="block mb-2 text-sm font-medium">Your Vol Forecast</label>
+                               <input id="yourVolatilityForecast" type="number" value="20" class="w-full bg-gray-700 p-2 rounded-lg border border-gray-600 font-mono">
+                            </div>
+                         </div>
+                         <div class="mt-4 text-center bg-gray-900 p-3 rounded-lg">
+                            <div id="fairValueResult" class="text-lg font-semibold text-gray-300">Enter Market Price</div>
+                            <div id="fairValuePercentage" class="text-sm text-cyan-400"></div>
+                         </div>
+                         <div class="mt-2 flex space-x-2">
+                             <button id="ivCallButton" class="w-full bg-green-600 hover:bg-green-700 rounded-lg text-sm p-2">Assess Call</button>
+                             <button id="ivPutButton" class="w-full bg-red-600 hover:bg-red-700 rounded-lg text-sm p-2">Assess Put</button>
+                        </div>
+                    </div>
+                     <!-- Return on Prediction -->
+                    <div class="pt-4 border-t border-gray-700">
+                         <h2 class="text-lg font-semibold text-gray-200 mb-2">Return on Prediction</h2>
+                         <div>
+                            <label for="predictionSlider" class="flex justify-between font-medium text-gray-300 text-sm mb-1"><span>Predicted Change (%)</span><span id="predictionValue" class="text-cyan-400 font-mono">+10%</span></label>
+                            <input id="predictionSlider" type="range" min="-100" max="1000" value="10" step="1" class="w-full h-2 bg-gray-700 slider">
+                            <div class="text-sm text-gray-400 mt-2">Predicted Price: <span id="predictedPriceDisplay" class="font-mono text-cyan-400">$110.00</span></div>
+                        </div>
+                        <div class="mt-4">
+                            <h3 class="text-md font-semibold text-gray-300 mb-2">Returns: Option vs. Stock</h3>
+                            <div class="space-y-3">
+                                <div class="bg-gray-900 p-3 rounded-lg"><span class="font-medium text-yellow-400 mb-1 block">Buying Stock</span><div class="flex justify-between items-center text-sm"><span>ROI:</span> <span id="stockRoi" class="font-mono">0%</span></div></div>
+                                <div class="bg-gray-900 p-3 rounded-lg"><span class="font-medium text-green-400 mb-1 block">Buying Call Option</span><div class="flex justify-between items-center text-sm"><span>ROI:</span> <span id="comparisonCallRoi" class="font-mono">0%</span></div></div>
+                                <div class="bg-gray-900 p-3 rounded-lg"><span class="font-medium text-red-400 mb-1 block">Buying Put Option</span><div class="flex justify-between items-center text-sm"><span>ROI:</span> <span id="comparisonPutRoi" class="font-mono">0%</span></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guide Tab -->
+                <div id="guide" class="tab-panel hidden space-y-6">
+                    <details class="group pt-2" open>
+                        <summary class="flex justify-between items-center font-medium text-gray-200 cursor-pointer list-none text-lg">How-To Guide</summary>
+                        <div class="text-gray-400 mt-4 text-sm space-y-4 prose prose-invert prose-sm">
+                            <div>
+                                <h3 class="font-semibold text-gray-300 text-base mb-2">How to Use This Model for Trading</h3>
+                                 <ul class="list-disc pl-5 space-y-2">
+                                    <li><strong>Find Mispriced Options:</strong> Use the "Fair Value Assessment" tool on the Analysis tab. Enter an option's market price and your own volatility forecast. The tool will tell you if the option is Undervalued or Overvalued according to your view.</li>
+                                     <li><strong>Visualize Risk:</strong> The charts show how the Greeks change as the stock moves, which is key for understanding how your position's risk profile evolves.</li>
+                                    <li><strong>Model Profit & Leverage:</strong> Use the "Return on Prediction" section to compare the ROI of buying an option vs. buying the stock for the same price target. This clearly illustrates the power of leverage and the risk/reward of your trade idea.</li>
+                                </ul>
+                            </div>
+                            <div class="pt-4 border-t border-gray-700/50">
+                                <h3 class="font-semibold text-gray-300 text-base mb-2">Tips for Forecasting Volatility</h3>
+                                <ul class="list-disc pl-5 space-y-2">
+                                    <li><strong>Use Historical Volatility (HV):</strong> Use HV from your broker as a baseline for what is "normal" for the stock.</li>
+                                    <li><strong>Compare HV to Implied Volatility (IV):</strong> The tool calculates IV for you. If IV is much higher than HV, options may be "expensive". If IV is lower, they may be "cheap."</li>
+                                     <li><strong>Consider Catalysts:</strong> Volatility often rises before earnings or major news and collapses after ("IV Crush"). Adjust your forecast accordingly.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLOT AREA -->
+        <div id="plot-area" class="w-full lg:w-3/4 p-4 lg:p-8 overflow-y-auto">
+             <!-- Charts for Analysis Tab -->
+            <div id="analysisCharts">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="plot-wrapper" id="pricePlot"></div>
+                    <div class="plot-wrapper" id="plPlot"></div>
+                    <div class="plot-wrapper" id="deltaPlot"></div>
+                    <div class="plot-wrapper" id="gammaPlot"></div>
+                    <div class="plot-wrapper" id="thetaPlot"></div>
+                    <div class="plot-wrapper" id="vegaPlot"></div>
+                     <div class="plot-wrapper" id="rhoPlot"></div>
+                    <div class="plot-wrapper" id="thetaDecayPlot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="text-center text-xs text-gray-500 py-2 bg-gray-900">
+        This site is for educational purposes only and is not financial advice.
+    </footer>
+
+    <script>
+        // DOM Refs and Global State
+        const domRefs = {
+            stockPriceInput: document.getElementById('stockPriceInput'),
+            strikePriceInput: document.getElementById('strikePriceInput'),
+            timeToMaturitySlider: document.getElementById('timeToMaturity'),
+            riskFreeRateSlider: document.getElementById('riskFreeRate'),
+            volatilitySlider: document.getElementById('volatility'),
+            marketPriceInput: document.getElementById('marketPriceInput'),
+            yourVolatilityForecast: document.getElementById('yourVolatilityForecast'),
+            ivCallButton: document.getElementById('ivCallButton'),
+            ivPutButton: document.getElementById('ivPutButton'),
+            timeToMaturityValue: document.getElementById('timeToMaturityValue'),
+            riskFreeRateValue: document.getElementById('riskFreeRateValue'),
+            volatilityValue: document.getElementById('volatilityValue'),
+            fairValueResult: document.getElementById('fairValueResult'),
+            fairValuePercentage: document.getElementById('fairValuePercentage'),
+            callPrice: document.getElementById('callPrice'),
+            putPrice: document.getElementById('putPrice'),
+            callIntrinsicValue: document.getElementById('callIntrinsicValue'),
+            putIntrinsicValue: document.getElementById('putIntrinsicValue'),
+            callExtrinsicValue: document.getElementById('callExtrinsicValue'),
+            putExtrinsicValue: document.getElementById('putExtrinsicValue'),
+            callDelta: document.getElementById('callDelta'),
+            putDelta: document.getElementById('putDelta'),
+            gamma: document.getElementById('gamma'),
+            vega: document.getElementById('vega'),
+            callTheta: document.getElementById('callTheta'),
+            putTheta: document.getElementById('putTheta'),
+            callRho: document.getElementById('callRho'),
+            putRho: document.getElementById('putRho'),
+            predictionSlider: document.getElementById('predictionSlider'),
+            predictionValue: document.getElementById('predictionValue'),
+            predictedPriceDisplay: document.getElementById('predictedPriceDisplay'),
+            stockRoi: document.getElementById('stockRoi'),
+            comparisonCallRoi: document.getElementById('comparisonCallRoi'),
+            comparisonPutRoi: document.getElementById('comparisonPutRoi'),
+        };
+
+        // --- Core Financial Functions ---
+        function cdf(x) {
+            const p = 0.3275911, a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429;
+            const sign = (x >= 0) ? 1 : -1, absX = Math.abs(x) / Math.sqrt(2.0), t = 1.0 / (1.0 + p * absX);
+            const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-absX * absX);
+            return 0.5 * (1.0 + sign * y);
+        }
+        function pdf(x) { return (1.0 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * x * x); }
+
+        function blackScholes(isCall, S, K, T, r, v) {
+            if (T <= 0 || v <= 0 || S <= 0 || K <= 0) return isCall ? Math.max(0, S - K) : Math.max(0, K - S);
+            const d1 = (Math.log(S / K) + (r + v * v / 2) * T) / (v * Math.sqrt(T));
+            const d2 = d1 - v * Math.sqrt(T);
+            if (isCall) return S * cdf(d1) - K * Math.exp(-r * T) * cdf(d2);
+            else return K * Math.exp(-r * T) * cdf(-d2) - S * cdf(-d1);
+        }
+        
+        function getGreeks(S, K, T, r, v) {
+            if (T <= 0 || v <= 0 || S <= 0 || K <= 0) return { callDelta: S > K ? 1:0, putDelta: S < K ? -1:0, gamma: 0, vega: 0, callTheta: 0, putTheta: 0, callRho: 0, putRho: 0 };
+            const d1 = (Math.log(S / K) + (r + v * v / 2) * T) / (v * Math.sqrt(T));
+            const d2 = d1 - v * Math.sqrt(T);
+            const pdf_d1 = pdf(d1);
+            const callDelta = cdf(d1), putDelta = callDelta - 1, gamma = pdf_d1 / (S * v * Math.sqrt(T)), vega = S * pdf_d1 * Math.sqrt(T) / 100;
+            const callTheta = (-((S * pdf_d1 * v) / (2 * Math.sqrt(T))) - r * K * Math.exp(-r * T) * cdf(d2)) / 365;
+            const putTheta = (-((S * pdf_d1 * v) / (2 * Math.sqrt(T))) + r * K * Math.exp(-r * T) * cdf(-d2)) / 365;
+            const callRho = K * T * Math.exp(-r * T) * cdf(d2) / 100, putRho = -K * T * Math.exp(-r * T) * cdf(-d2) / 100;
+            return { callDelta, putDelta, gamma, vega, callTheta, putTheta, callRho, putRho };
+        }
+        
+        function findImpliedVolatility(marketPrice, isCall, S, K, T, r) {
+            let low = 0.001, high = 5.0; 
+            for(let i=0; i<100; i++) {
+                let mid = (low + high) / 2;
+                if (mid < 1e-9) mid = 1e-9;
+                let price = blackScholes(isCall, S, K, T, r, mid);
+                if (price > marketPrice) high = mid; else low = mid;
+            }
+            return (high + low) / 2;
+        }
+
+        // --- UI and Plotting Logic ---
+        function updateAnalysisVisuals() {
+            const S = parseFloat(domRefs.stockPriceInput.value) || 100;
+            const K = parseFloat(domRefs.strikePriceInput.value) || 100;
+            const T_days = parseInt(domRefs.timeToMaturitySlider.value, 10);
+            const T = T_days / 365.0;
+            const r = parseFloat(domRefs.riskFreeRateSlider.value);
+            const v = parseFloat(domRefs.volatilitySlider.value) / 100;
+            
+            // Update UI displays
+            domRefs.timeToMaturityValue.textContent = `${T_days}d`;
+            domRefs.riskFreeRateValue.textContent = `${(r*100).toFixed(1)}%`;
+            domRefs.volatilityValue.textContent = `${(v*100).toFixed(0)}%`;
+            
+            // Calculations
+            const callPrice = blackScholes(true, S, K, T, r, v);
+            const putPrice = blackScholes(false, S, K, T, r, v);
+            const callIntrinsic = Math.max(0, S - K);
+            const putIntrinsic = Math.max(0, K - S);
+            const greeks = getGreeks(S, K, T, r, v);
+            
+            // Return Prediction
+            const percentChange = parseFloat(domRefs.predictionSlider.value);
+            const predictedS = S * (1 + percentChange / 100);
+            domRefs.predictionValue.textContent = `${percentChange >= 0 ? '+' : ''}${percentChange.toFixed(0)}%`;
+            domRefs.predictedPriceDisplay.textContent = `$${predictedS.toFixed(2)}`;
+            const finalCallValue = Math.max(0, predictedS - K);
+            const finalPutValue = Math.max(0, K - predictedS);
+            const callRoi = callPrice > 0.001 ? ((finalCallValue - callPrice) / callPrice) * 100 : 0;
+            const putRoi = putPrice > 0.001 ? ((finalPutValue - putPrice) / putPrice) * 100 : 0;
+            const stockRoi = S > 0 ? ((predictedS - S) / S) * 100 : 0;
+            
+            // Update displays
+            domRefs.callPrice.textContent = `$${callPrice.toFixed(2)}`;
+            domRefs.putPrice.textContent = `$${putPrice.toFixed(2)}`;
+            domRefs.callIntrinsicValue.textContent = `$${callIntrinsic.toFixed(2)}`;
+            domRefs.putIntrinsicValue.textContent = `$${putIntrinsic.toFixed(2)}`;
+            domRefs.callExtrinsicValue.textContent = `$${(callPrice - callIntrinsic).toFixed(2)}`;
+            domRefs.putExtrinsicValue.textContent = `$${(putPrice - putIntrinsic).toFixed(2)}`;
+            domRefs.stockRoi.textContent = `${stockRoi.toFixed(1)}%`;
+            domRefs.comparisonCallRoi.textContent = `${callRoi.toFixed(1)}%`;
+            domRefs.comparisonPutRoi.textContent = `${putRoi.toFixed(1)}%`;
+            Object.keys(greeks).forEach(key => { domRefs[key] && (domRefs[key].textContent = greeks[key].toFixed(key === 'gamma' ? 4:3)) });
+
+            // Plotting Data
+            const stockPrices = [], callPricesArr = [], putPricesArr = [], callPlArr = [], putPlArr = [], stockPlArr = [];
+            const callDeltaArr = [], putDeltaArr = [], gammaArr = [], vegaArr = [], rhoArrCall = [], rhoArrPut = [], callThetaArr = [], putThetaArr = [], thetaDecayValues = [], timePoints = [];
+            const plotRange = Math.max(S*0.5, K * 0.5), minS = Math.max(1, S - plotRange), maxS = S + plotRange, step = (maxS - minS) / 200;
+
+            for (let s_iter = minS; s_iter <= maxS; s_iter += step) {
+                stockPrices.push(s_iter);
+                const cp = blackScholes(true, s_iter, K, T, r, v);
+                const pp = blackScholes(false, s_iter, K, T, r, v);
+                callPricesArr.push(cp); putPricesArr.push(pp);
+                callPlArr.push(Math.max(0, s_iter - K) - callPrice);
+                putPlArr.push(Math.max(0, K - s_iter) - putPrice);
+                stockPlArr.push(s_iter - S);
+                const g = getGreeks(s_iter, K, T, r, v);
+                callDeltaArr.push(g.callDelta); putDeltaArr.push(g.putDelta);
+                gammaArr.push(g.gamma); vegaArr.push(g.vega); rhoArrCall.push(g.callRho); rhoArrPut.push(g.putRho);
+                callThetaArr.push(g.callTheta); putThetaArr.push(g.putTheta);
+            }
+            
+            for (let t_iter = T_days; t_iter >= 0; t_iter--) {
+                const time_in_years = t_iter / 365.0;
+                const price_at_t = blackScholes(true, S, K, time_in_years, r, v);
+                const intrinsic_at_t = Math.max(0, S-K);
+                thetaDecayValues.push(price_at_t - intrinsic_at_t);
+                timePoints.push(t_iter);
+            }
+            
+            const commonLayout = {
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                xaxis: { title: { text: 'Stock Price', font: { color: '#9ca3af', size: 12 }}, gridcolor: '#374151', tickfont: { color: '#9ca3af' }, range: [minS, maxS] },
+                yaxis: { gridcolor: '#374151', tickfont: { color: '#9ca3af' }, zeroline: true, zerolinecolor: '#4b5563', zerolinewidth: 2 },
+                legend: { font: { color: '#d1d5db' }, orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'right', x: 1 },
+                margin: { l: 50, r: 20, b: 40, t: 50 }
+            };
+
+            Plotly.react('pricePlot', [{ x: stockPrices, y: callPricesArr, mode: 'lines', name: 'Call', line: { color: '#4ade80' } }, { x: stockPrices, y: putPricesArr, mode: 'lines', name: 'Put', line: { color: '#f87171' } }], { ...commonLayout, yaxis: {...commonLayout.yaxis, title: {text:'Option Price'}}, title: {text:'Theoretical Price Curve', font:{color:'#e5e7eb', size:16}}});
+            Plotly.react('plPlot', [{ x: stockPrices, y: callPlArr, mode: 'lines', name: 'Call P/L', line: { color: '#4ade80' } }, { x: stockPrices, y: putPlArr, mode: 'lines', name: 'Put P/L', line: { color: '#f87171' } }, { x: stockPrices, y: stockPlArr, mode: 'lines', name: 'Stock P/L', line: { color: '#facc15', dash: 'dash' } } ], { ...commonLayout, xaxis: {...commonLayout.xaxis, title:{text: 'Stock Price at Expiration'}}, yaxis: {...commonLayout.yaxis, title: {text:'Profit / Loss ($)'}}, title: {text:'Profit/Loss at Expiration', font:{color:'#e5e7eb', size:16}}, shapes: [ {type: 'line', x0: K + callPrice, y0: Math.min(...callPlArr, ...putPlArr), x1: K + callPrice, y1: Math.max(...callPlArr), line:{color:'#4ade80', width:1, dash:'dot'}}, {type: 'line', x0: K - putPrice, y0: Math.min(...callPlArr, ...putPlArr), x1: K - putPrice, y1: Math.max(...putPlArr), line:{color:'#f87171', width:1, dash:'dot'}}] });
+            Plotly.react('deltaPlot', [{ x: stockPrices, y: callDeltaArr, mode: 'lines', name: 'Call', line: { color: '#4ade80' } }, { x: stockPrices, y: putDeltaArr, mode: 'lines', name: 'Put', line: { color: '#f87171' } }], { ...commonLayout, title: {text:'Delta', font:{color:'#e5e7eb', size:16}}});
+            Plotly.react('gammaPlot', [{ x: stockPrices, y: gammaArr, mode: 'lines', name: 'Gamma', line: { color: '#2dd4bf' } }], { ...commonLayout, title: {text:'Gamma', font:{color:'#e5e7eb', size:16}}});
+            Plotly.react('thetaPlot', [{ x: stockPrices, y: callThetaArr, mode: 'lines', name: 'Call', line: { color: '#4ade80' } }, { x: stockPrices, y: putThetaArr, mode: 'lines', name: 'Put', line: { color: '#f87171' } } ], { ...commonLayout, title: {text:'Theta (per day)', font:{color:'#e5e7eb', size:16}}});
+            Plotly.react('vegaPlot', [{ x: stockPrices, y: vegaArr, mode: 'lines', name: 'Vega', line: { color: '#a78bfa' } }], { ...commonLayout, title: {text:'Vega', font:{color:'#e5e7eb', size:16}}});
+            Plotly.react('rhoPlot', [{ x: stockPrices, y: rhoArrCall, mode: 'lines', name: 'Call', line: { color: '#4ade80' } }, { x: stockPrices, y: rhoArrPut, mode: 'lines', name: 'Put', line: { color: '#f87171' } } ], { ...commonLayout, title: {text:'Rho', font:{color:'#e5e7eb', size:16}}});
+            Plotly.react('thetaDecayPlot', [{ x: timePoints.reverse(), y: thetaDecayValues.reverse(), mode: 'lines', name: 'Extrinsic Value', line: { color: '#facc15' } }], { ...commonLayout, xaxis: { ...commonLayout.xaxis, title: {text: 'Days Until Expiration'}}, yaxis: {...commonLayout.yaxis, title: {text:'Extrinsic Value ($)'}}, title: {text:'Theta Decay Curve', font:{color:'#e5e7eb', size:16}}});
+        }
+        
+        function assessFairValue(isCall) {
+             const marketPrice = parseFloat(domRefs.marketPriceInput.value);
+            if (isNaN(marketPrice) || marketPrice <= 0) { domRefs.fairValueResult.textContent = "Invalid Market Price"; return; }
+            const S = parseFloat(domRefs.stockPriceInput.value), K = parseFloat(domRefs.strikePriceInput.value);
+            const T_days = parseInt(domRefs.timeToMaturitySlider.value, 10), T = T_days / 365.0;
+            const r = parseFloat(domRefs.riskFreeRateSlider.value);
+            const yourVol = parseFloat(domRefs.yourVolatilityForecast.value);
+            if (isNaN(yourVol) || yourVol <= 0) { domRefs.fairValueResult.textContent = "Invalid Forecast"; return; }
+            
+            const iv = findImpliedVolatility(marketPrice, isCall, S, K, T, r);
+            domRefs.volatilitySlider.value = (iv * 100);
+            
+            const fairPrice = blackScholes(isCall, S, K, T, r, yourVol / 100);
+            const difference = ((marketPrice / fairPrice) - 1) * 100;
+
+            if (Math.abs(difference) < 5) { // 5% tolerance
+                domRefs.fairValueResult.textContent = "Fair Value";
+                domRefs.fairValueResult.className = "text-lg font-semibold text-gray-300";
+            } else if (difference > 0) {
+                domRefs.fairValueResult.textContent = "Overvalued";
+                domRefs.fairValueResult.className = "text-lg font-semibold text-red-400";
+            } else {
+                domRefs.fairValueResult.textContent = "Undervalued";
+                domRefs.fairValueResult.className = "text-lg font-semibold text-green-400";
+            }
+            domRefs.fairValuePercentage.textContent = `Market is ${Math.abs(difference).toFixed(1)}% ${difference > 0 ? 'above' : 'below'} your fair value of $${fairPrice.toFixed(2)}`;
+            updateAnalysisVisuals();
+        }
+
+        // --- Event Listeners ---
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+        const chartContainers = {
+            analysis: document.getElementById('analysisCharts'),
+            guide: { style: { display: 'none' } } // No chart for guide
+        };
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                const tabId = button.getAttribute('data-tab');
+                tabPanels.forEach(panel => panel.classList.toggle('hidden', panel.id !== tabId));
+                Object.keys(chartContainers).forEach(key => {
+                    if (chartContainers[key]) chartContainers[key].style.display = (key === tabId) ? '' : 'none';
+                });
+                if(tabId === 'analysis') {
+                    // Give plotly a moment to recognize the new layout
+                    setTimeout(updateAnalysisVisuals, 50);
+                }
+            });
+        });
+        
+        const allInputs = document.querySelectorAll('#analysis input');
+        allInputs.forEach(input => input.addEventListener('input', updateAnalysisVisuals));
+
+        domRefs.ivCallButton.addEventListener('click', () => assessFairValue(true));
+        domRefs.ivPutButton.addEventListener('click', () => assessFairValue(false));
+        
+        window.addEventListener('resize', () => setTimeout(updateAnalysisVisuals, 150));
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAnalysisVisuals();
+        });
+    </script>
+</body>
+</html>

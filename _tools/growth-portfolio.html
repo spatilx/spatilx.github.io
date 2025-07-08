@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Growth Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: The SPA uses a dashboard-centric design to transform the dense report into an interactive experience. The structure flows from introducing the portfolio ('What'), to explaining the risks ('Why'), to the core interactive 'Risk-On/Off' checklist ('How'), and finally to a 'What If' macro scenario simulator. This non-linear, task-oriented approach is more engaging than the original report's format and allows users to actively explore the model's logic by toggling conditions and observing the immediate impact on the risk assessment. The primary goal is to let users learn by doing. -->
+    <!-- Visualization & Content Choices: Portfolio breakdown -> Goal: Inform -> Doughnut Chart (Chart.js) -> Non-interactive -> Clear, immediate understanding of allocation. Risk Rules -> Goal: Interact/Organize -> Interactive Checkbox List (HTML/JS) -> User toggles conditions to simulate decision-making -> Core user engagement loop. Overall Risk -> Goal: Synthesize -> Dynamic Gauge/Dial (Chart.js) -> Updates based on checklist -> Provides instant visual feedback on the model's aggregate signal. Macro Scenarios -> Goal: Relate/Simulate -> Buttons (HTML/JS) -> Sets pre-defined checklist states -> Connects abstract macro concepts to concrete model behavior. Explanations -> Goal: Inform -> Clickable Cards/Modals (HTML/JS) -> User-initiated detail reveal -> Keeps the main interface clean while offering depth on demand. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F5F4; /* warm-neutral-100 */
+            color: #374151; /* gray-700 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+            height: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .gauge-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            height: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .nav-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-button.active {
+            color: #10B981; /* green-500 */
+            border-bottom: 2px solid #10B981;
+        }
+        .section-hidden {
+            display: none;
+        }
+        .checklist-item:hover {
+            background-color: #F5F5F4; /* warm-neutral-100 */
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="container mx-auto px-4 py-8">
+        
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800">Adaptive Growth Navigator</h1>
+            <p class="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">An interactive tool to explore a multi-factor tactical rotation strategy for a high-growth portfolio.</p>
+        </header>
+
+        <nav class="flex justify-center border-b border-gray-200 mb-12">
+            <button id="nav-dashboard" class="nav-button py-4 px-6 text-lg font-medium text-gray-500 hover:text-gray-700">Dashboard</button>
+            <button id="nav-portfolio" class="nav-button py-4 px-6 text-lg font-medium text-gray-500 hover:text-gray-700">Portfolio</button>
+            <button id="nav-strategy" class="nav-button py-4 px-6 text-lg font-medium text-gray-500 hover:text-gray-700">Strategy</button>
+        </nav>
+
+        <main id="main-content">
+            <!-- Dashboard Section -->
+            <section id="section-dashboard">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-gray-800">Risk Control Dashboard</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">This is the core of the model. Use the checklist to see how different market conditions influence the decision to be invested ("Risk-On") or move to cash ("Risk-Off"). A "Risk-Off" signal is triggered if **five or more** conditions are met.</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+                        <!-- Left Side: Checklist -->
+                        <div class="order-2 lg:order-1">
+                            <h3 class="text-xl font-semibold text-gray-700 mb-4">Tactical Rotation Rule Set (De-Risking Checklist)</h3>
+                            <div id="checklist-container" class="space-y-3">
+                                <!-- Checklist items will be injected by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Right Side: Gauge and Decision -->
+                        <div class="order-1 lg:order-2 text-center">
+                            <div class="gauge-container mb-4">
+                                <canvas id="riskGaugeChart"></canvas>
+                            </div>
+                            <div id="decision-box" class="p-4 rounded-lg transition-colors duration-300">
+                                <p class="text-lg font-medium">Model Decision:</p>
+                                <p id="decision-text" class="text-2xl font-bold"></p>
+                            </div>
+                             <div class="mt-6">
+                                <p class="text-sm text-gray-500">Number of Bearish Conditions Met:</p>
+                                <p id="checked-count" class="text-3xl font-bold text-gray-800">0 / 7</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="mt-12">
+                    <div class="text-center mb-8">
+                        <h3 class="text-2xl font-bold text-gray-800">Macro Regime Simulator</h3>
+                        <p class="mt-2 text-gray-600">See how the model might react under different economic conditions. Click a scenario below.</p>
+                    </div>
+                    <div id="macro-scenario-buttons" class="flex flex-wrap justify-center gap-3">
+                        <!-- Macro buttons will be injected by JS -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Portfolio Section -->
+            <section id="section-portfolio" class="section-hidden">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-gray-800">Portfolio Composition & Risks</h2>
+                    <p class="mt-2 text-gray-600 max-w-2xl mx-auto">The "Risk-On" portfolio is an aggressive blend of leveraged equity, digital assets, and gold, each chosen for a specific role. Understanding its inherent risks is key to understanding why a tactical overlay is necessary.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h3 class="text-xl font-semibold text-center mb-4">"Risk-On" Allocation</h3>
+                        <div class="chart-container">
+                             <canvas id="portfolioChart"></canvas>
+                        </div>
+                        <div class="mt-8">
+                            <table class="w-full text-left">
+                                <thead class="border-b-2 border-gray-200">
+                                    <tr>
+                                        <th class="py-2 font-semibold text-gray-700">Asset</th>
+                                        <th class="py-2 font-semibold text-gray-700 text-right">Allocation</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-100">
+                                        <td class="py-3 text-gray-600">UPRO (Leveraged S&P 500)</td>
+                                        <td class="py-3 font-medium text-gray-800 text-right">50%</td>
+                                    </tr>
+                                    <tr class="border-b border-gray-100">
+                                        <td class="py-3 text-gray-600">Bitcoin (BTC)</td>
+                                        <td class="py-3 font-medium text-gray-800 text-right">25%</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="py-3 text-gray-600">Gold (GLD)</td>
+                                        <td class="py-3 font-medium text-gray-800 text-right">25%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-white rounded-2xl shadow-lg p-6">
+                            <h4 class="font-bold text-lg text-gray-800">Volatility Decay</h4>
+                            <p class="text-gray-600 mt-2">Leveraged ETFs like UPRO suffer from "volatility decay" in choppy, non-trending markets. Their daily rebalancing mechanism can lead to losses over time even if the underlying index is flat, making a buy-and-hold approach extremely risky.</p>
+                        </div>
+                        <div class="bg-white rounded-2xl shadow-lg p-6">
+                            <h4 class="font-bold text-lg text-gray-800">Leverage & Drawdowns</h4>
+                            <p class="text-gray-600 mt-2">The 3x leverage amplifies losses just as much as gains. A minor market correction can cause a significant loss in the portfolio, making capital preservation during downturns the primary goal.</p>
+                        </div>
+                         <div class="bg-white rounded-2xl shadow-lg p-6">
+                            <h4 class="font-bold text-lg text-gray-800">Correlation Risk</h4>
+                            <p class="text-gray-600 mt-2">During a market crisis (a "dash for cash"), all asset correlations can converge towards 1. The diversification benefits of Gold and Bitcoin can evaporate when they are needed most, necessitating a model that detects systemic risk.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Strategy Section -->
+            <section id="section-strategy" class="section-hidden">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-gray-800">Strategy Framework</h2>
+                    <p class="mt-2 text-gray-600 max-w-3xl mx-auto">The model is not a single indicator but a weight-of-evidence framework. It layers signals from three distinct categories—Trend, Volatility, and Macroeconomics—to build a robust, high-conviction view of the market regime.</p>
+                </div>
+                <div class="space-y-8">
+                    <!-- Trend Layer -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-1">1. Trend & Momentum</h3>
+                        <p class="text-gray-600 mb-4">This layer answers: What is the primary direction of the market, and how strong is it?</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="border border-gray-200 rounded-lg p-4"><strong>SPY vs. 200-Day SMA:</strong> Defines the long-term trend for equities.</div>
+                            <div class="border border-gray-200 rounded-lg p-4"><strong>BTC Weekly MACD:</strong> Gauges momentum shifts in the volatile crypto asset.</div>
+                            <div class="border border-gray-200 rounded-lg p-4"><strong>ADX:</strong> Quantifies the *strength* of a trend, not its direction.</div>
+                        </div>
+                    </div>
+
+                    <!-- Volatility Layer -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-1">2. Volatility Regime</h3>
+                         <p class="text-gray-600 mb-4">This layer acts as a fear gauge, protecting the portfolio from its main vulnerability: volatility decay.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                             <div class="border border-gray-200 rounded-lg p-4"><strong>VIX:</strong> The primary "fear gauge." A reading > 25 indicates high market stress.</div>
+                             <div class="border border-gray-200 rounded-lg p-4"><strong>VVIX:</strong> Measures the volatility of the VIX itself. Confirms whether panic is accelerating.</div>
+                             <div class="border border-gray-200 rounded-lg p-4"><strong>GVZ:</strong> The "VIX for Gold," adding another layer of macroeconomic fear assessment.</div>
+                        </div>
+                    </div>
+
+                    <!-- Macro Layer -->
+                    <div class="bg-white rounded-2xl shadow-lg p-8">
+                         <h3 class="text-2xl font-semibold text-gray-800 mb-1">3. Macroeconomic Overlay</h3>
+                         <p class="text-gray-600 mb-4">A fundamental reality check. Strong technicals can be undone by a weakening economic backdrop.</p>
+                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                             <div class="border border-gray-200 rounded-lg p-4"><strong>High-Yield Spreads:</strong> The "smart money" indicator. Widening spreads signal rising credit risk.</div>
+                             <div class="border border-gray-200 rounded-lg p-4"><strong>Liquidity:</strong> Tracks the Fed's balance sheet and M2 money supply. Less liquidity is a headwind for assets.</div>
+                             <div class="border border-gray-200 rounded-lg p-4"><strong>Real Yields:</strong> A key driver for Gold. High real yields are a headwind for non-yielding assets.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const checklistData = [
+                { id: 'spy_trend', label: 'S&P 500 (SPY) is below its 200-day SMA.', category: 'Core Trend' },
+                { id: 'btc_trend', label: 'Weekly MACD for Bitcoin (BTC) is bearish.', category: 'Digital Asset Trend' },
+                { id: 'vix_volatility', label: 'VIX has closed > 25 for most of the week.', category: 'Volatility Regime' },
+                { id: 'credit_spreads', label: 'High-Yield Spread is > 1.5% above 52-week low.', category: 'Macro: Credit Risk' },
+                { id: 'liquidity', label: 'Fed balance sheet is contracting OR M2 growth is negative.', category: 'Macro: Liquidity' },
+                { id: 'real_yields', label: '10-Year Real Yield is > 2.0% and rising.', category: 'Macro: Financial Conditions' },
+                { id: 'adx_strength', label: 'ADX for the S&P 500 is > 25 (confirming downtrend strength).', category: 'Trend Confirmation' }
+            ];
+
+            const macroScenarios = {
+                "Reset": { checks: [] },
+                "Goldilocks": { checks: [], description: "Low inflation, strong growth. Favorable for risk assets." },
+                "Reflationary Boom": { checks: ['liquidity'], description: "High growth and rising inflation. Generally good, but watch for Fed action." },
+                "Stagflation": { checks: ['spy_trend', 'vix_volatility', 'credit_spreads', 'real_yields', 'adx_strength'], description: "Low growth, high inflation. Hostile to equities." },
+                "Deflationary Bust": { checks: ['spy_trend', 'btc_trend', 'vix_volatility', 'credit_spreads', 'liquidity', 'adx_strength'], description: "Recessionary environment. The most dangerous regime." }
+            };
+
+            const checklistContainer = document.getElementById('checklist-container');
+            const checkedCountEl = document.getElementById('checked-count');
+            const decisionTextEl = document.getElementById('decision-text');
+            const decisionBoxEl = document.getElementById('decision-box');
+            
+            let riskGaugeChart;
+
+            function renderChecklist() {
+                checklistContainer.innerHTML = '';
+                checklistData.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'checklist-item flex items-start space-x-3 bg-white p-3 rounded-lg border border-gray-200 cursor-pointer';
+                    div.innerHTML = `
+                        <input id="${item.id}" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 mt-1 cursor-pointer">
+                        <label for="${item.id}" class="text-gray-700 w-full cursor-pointer">
+                            <span class="font-medium">${item.label}</span>
+                            <span class="text-xs text-gray-500 block">${item.category}</span>
+                        </label>
+                    `;
+                    checklistContainer.appendChild(div);
+                    div.addEventListener('click', (e) => {
+                        if (e.target.type !== 'checkbox') {
+                           const checkbox = div.querySelector('input[type="checkbox"]');
+                           checkbox.checked = !checkbox.checked;
+                           checkbox.dispatchEvent(new Event('change'));
+                        }
+                    });
+
+                    document.getElementById(item.id).addEventListener('change', updateDashboard);
+                });
+            }
+
+            function updateDashboard() {
+                const checkedCheckboxes = document.querySelectorAll('#checklist-container input:checked');
+                const count = checkedCheckboxes.length;
+                
+                checkedCountEl.textContent = `${count} / 7`;
+                
+                let decision, bgColor, textColor;
+                if (count >= 5) {
+                    decision = 'Risk-Off: Move to Cash';
+                    bgColor = 'bg-red-100';
+                    textColor = 'text-red-700';
+                } else {
+                    decision = 'Risk-On: Stay Invested';
+                    bgColor = 'bg-green-100';
+                    textColor = 'text-green-700';
+                }
+
+                decisionTextEl.textContent = decision;
+                decisionBoxEl.className = `p-4 rounded-lg transition-colors duration-300 ${bgColor} ${textColor}`;
+                
+                updateGauge(count);
+            }
+
+            function updateGauge(count) {
+                if (!riskGaugeChart) return;
+                const percentage = (count / 7) * 100;
+                riskGaugeChart.data.datasets[0].data = [percentage, 100 - percentage];
+                riskGaugeChart.data.datasets[0].backgroundColor = [
+                    count >= 5 ? '#EF4444' : (count >= 3 ? '#F59E0B' : '#10B981'), // red, amber, green
+                    '#E5E7EB'
+                ];
+                riskGaugeChart.update('none');
+            }
+
+            function createGauge() {
+                const ctx = document.getElementById('riskGaugeChart').getContext('2d');
+                riskGaugeChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [0, 100],
+                            backgroundColor: ['#10B981', '#E5E7EB'],
+                            borderColor: '#F5F5F4',
+                            borderWidth: 4,
+                            circumference: 180,
+                            rotation: 270,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+            
+            function createPortfolioChart() {
+                const ctx = document.getElementById('portfolioChart')?.getContext('2d');
+                if (!ctx) return;
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['UPRO (Leveraged S&P 500)', 'Bitcoin (BTC)', 'Gold (GLD)'],
+                        datasets: [{
+                            data: [50, 25, 25],
+                            backgroundColor: ['#3B82F6', '#F59E0B', '#FBBF24'],
+                            borderColor: '#FFFFFF',
+                            borderWidth: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    font: { size: 14 }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderMacroButtons() {
+                const container = document.getElementById('macro-scenario-buttons');
+                container.innerHTML = '';
+                Object.keys(macroScenarios).forEach(scenario => {
+                    const button = document.createElement('button');
+                    button.textContent = scenario;
+                    let buttonClass = 'px-4 py-2 rounded-lg font-medium transition-colors duration-200';
+                    if (scenario === 'Reset') {
+                        buttonClass += ' bg-gray-200 text-gray-700 hover:bg-gray-300';
+                    } else {
+                        buttonClass += ' bg-blue-100 text-blue-700 hover:bg-blue-200';
+                    }
+                    button.className = buttonClass;
+
+                    button.addEventListener('click', () => {
+                        const scenarioData = macroScenarios[scenario];
+                        checklistData.forEach(item => {
+                            document.getElementById(item.id).checked = scenarioData.checks.includes(item.id);
+                        });
+                        updateDashboard();
+                    });
+                    container.appendChild(button);
+                });
+            }
+
+            const sections = {
+                dashboard: document.getElementById('section-dashboard'),
+                portfolio: document.getElementById('section-portfolio'),
+                strategy: document.getElementById('section-strategy')
+            };
+
+            const navButtons = {
+                dashboard: document.getElementById('nav-dashboard'),
+                portfolio: document.getElementById('nav-portfolio'),
+                strategy: document.getElementById('nav-strategy')
+            };
+
+            function switchTab(targetTab) {
+                Object.values(sections).forEach(section => section.classList.add('section-hidden'));
+                Object.values(navButtons).forEach(button => button.classList.remove('active'));
+                
+                sections[targetTab].classList.remove('section-hidden');
+                navButtons[targetTab].classList.add('active');
+
+                if (targetTab === 'portfolio') {
+                    createPortfolioChart();
+                }
+            }
+
+            navButtons.dashboard.addEventListener('click', () => switchTab('dashboard'));
+            navButtons.portfolio.addEventListener('click', () => switchTab('portfolio'));
+            navButtons.strategy.addEventListener('click', () => switchTab('strategy'));
+
+            // Initial setup
+            switchTab('dashboard');
+            renderChecklist();
+            createGauge();
+            renderMacroButtons();
+            updateDashboard();
+
+        });
+    </script>
+</body>
+</html>
